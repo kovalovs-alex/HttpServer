@@ -2,9 +2,7 @@
 
 public class HttpRequest
 {
-    HttpRequestVerb verb;
-    HttpVersion version;
-    string uri;
+    public RequestLine requestLine;
     public Dictionary<string, string> headers;
 
 }
