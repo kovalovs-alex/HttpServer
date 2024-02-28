@@ -67,9 +67,9 @@ public class Server
             
             string intermediateString = stringBuilder.ToString();
             string headerString = intermediateString.Substring(0, intermediateString.Length-receivedBytes+headerEndPosition);
-            
-            if(HttpRequestValidator.ProcessRequest(headerString)) return headerString;
 
+            var request = HttpRequestValidator.ProcessRequest(headerString);
+            
             //TODO: Read header content-length and read request body to end
 
         }    
