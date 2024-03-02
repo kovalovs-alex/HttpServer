@@ -32,7 +32,7 @@ public static class HttpRequestValidator
     #region Verify request-line
     private static RequestLine ProcessRequestLine(string requestLine)
     {
-        string[] splitRequestLine = SplitRequestLine(requestLine);
+        string[] splitRequestLine = SplitRequestLineIntoArray(requestLine);
 
         HttpRequestVerb verb = ValidateVerb(splitRequestLine[0]);
         bool isURIValid = ValidateURI(splitRequestLine[1]);
@@ -41,13 +41,13 @@ public static class HttpRequestValidator
         return new RequestLine {verb = verb, URI = splitRequestLine[1], httpVersion = protocolVersion};
     }
     //TODO: Change to data object
-    private static string[] SplitRequestLine(string requestLine)
+    private static string[] SplitRequestLineIntoArray(string requestLine)
     {
-        string[] splitRequestLine = requestLine.Split(" ");
+        string[] splitRequestLineArray = requestLine.Split(" ");
         //HTTP 0.9 request line consists only of verb and path to resource
         //HTTP 1.0 and above also has protocol version
-        if(!(splitRequestLine.Length == 2 || splitRequestLine.Length == 3)) throw new ArgumentException("Incorrect format of request-line");
-        return splitRequestLine;
+        if(!(splitRequestLineArray.Length == 2 || splitRequestLineArray.Length == 3)) throw new ArgumentException("Incorrect format of request-line");
+        return splitRequestLineArray;
     }
 
     private static HttpRequestVerb ValidateVerb(string verb)
@@ -97,25 +97,20 @@ public static class HttpRequestValidator
         var headersDict = new Dictionary<string, string>();
         foreach(string header in headers)
         {
-            ProcessHeader(headersDict ,header);
+            var headerTuple = SplitHeaderIntoKeyValueTuple(header);
+            AddHeaderTupleToHeadersDictionary(headersDict, headerTuple);
         }
         return headersDict;
     }
 
-    private static void ProcessHeader(Dictionary<string, string> headersDict, string header)
-    {
-        var headerTuple = SplitHeaderIntoTuple(header);
-        AddHeaderToHeadersDictionary(headersDict, headerTuple);
-    }
-
-    private static Tuple<string, string> SplitHeaderIntoTuple(string header)
+    private static Tuple<string, string> SplitHeaderIntoKeyValueTuple(string header)
     {
         string[] splitHeader = header.Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if(splitHeader.Length != 2) throw new ArgumentException($"Request Header has incorrect format; Header {String.Join("|", splitHeader)}");
         return new Tuple<string, string>(splitHeader[0], splitHeader[1]);
     }
 
-    private static void AddHeaderToHeadersDictionary(Dictionary<string, string> headersDict, Tuple<string, string> headerTuple)
+    private static void AddHeaderTupleToHeadersDictionary(Dictionary<string, string> headersDict, Tuple<string, string> headerTuple)
     {
         bool addedSuccessfully = headersDict.TryAdd(headerTuple.Item1.Trim(), headerTuple.Item2.Trim());
         if(!addedSuccessfully) throw new ArgumentException("Request header already exists");
