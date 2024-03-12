@@ -2,8 +2,8 @@
 
 public class RequestLine
 {
-    public HttpRequestVerb verb;
+    public HttpRequestVerb Verb;
     public string URI;
-    public HttpVersion httpVersion;
+    public HttpVersion HttpVersion;
 
 }
