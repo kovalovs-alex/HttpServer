@@ -137,4 +137,43 @@ public class Server
         request.Body += body;
 
     }
+
+    private Tuple<string,string> ReadSocketUntilDelimiter(Socket socket, string delimiter, bool includeDelimiterInResult)
+    {
+        byte[] buffer = new byte[1024];
+        string result = String.Empty;
+        string leftoverFromBuffer = String.Empty;
+        var stringBuilder = new StringBuilder();
+
+        for(int receivedBytes; (receivedBytes = socket.Receive(buffer)) > 0;)
+        {    
+            if (receivedBytes == 0) break; //TODO Research if change to Timeout would be better
+            byte[] bufferWithoutZeros = new byte[receivedBytes];
+            Array.Copy(buffer, bufferWithoutZeros, receivedBytes); //bufferWithoutZeros will include data without trailing zeros from buffer
+
+            string decodedBuffer = Encoding.UTF8.GetString(bufferWithoutZeros);
+
+            int delimiterPosition = decodedBuffer.IndexOf(delimiter);
+            if(delimiterPosition == -1)
+            {
+                stringBuilder.Append(decodedBuffer);
+                continue;
+            }
+
+            string bufferBeforeDelimiter = decodedBuffer[..delimiterPosition];
+            string bufferAfterDelimiter;
+            if(includeDelimiterInResult)
+                bufferAfterDelimiter = decodedBuffer[delimiterPosition..];
+            else
+                bufferAfterDelimiter = decodedBuffer[(delimiterPosition+delimiter.Length)..];
+
+            stringBuilder.Append(bufferBeforeDelimiter);
+            result = stringBuilder.ToString();
+            leftoverFromBuffer = bufferAfterDelimiter;
+            break;
+        }  
+        return new Tuple<string, string>(result, leftoverFromBuffer);
+    }
+
+
 }
