@@ -31,24 +31,37 @@ public class Server
 
             while(true)
             {
+                string responseBody = "";
+                
                 //socket to client
                 var clientSocket = listener.Accept();
 
                 var incomingRequest = ReadSocketToEnd(clientSocket);
-                //Console.WriteLine("Request : " + incomingRequest);
 
                 var response = new HttpResponse {
-
                     StatusLine = new ResponseStatusLine{ 
-                        Version = incomingRequest.RequestLine.HttpVersion,
-                        StatusCode = 200,
-                        StatusText = "OK"
+                        Version = incomingRequest.RequestLine.HttpVersion
                     },
                     Headers = new Dictionary<string, string>(),
-                    Body = $"<!doctype html><html><body><p>paragraph 1</p><p>paragraph 2</p><p>Requested URI = {incomingRequest.RequestLine.URI}</p></body</html>"
                 };
 
-                clientSocket.Send(Encoding.UTF8.GetBytes($"{response.StatusLine.Version.StringValue()} {response.StatusLine.StatusCode} {response.StatusLine.StatusText}\r\n\r\n{response.Body}"));
+                string requestedResource = incomingRequest.RequestLine.URI;
+                if(File.Exists(requestedResource))
+                {
+                    responseBody = Encoding.UTF8.GetString(File.ReadAllBytes(requestedResource));
+                    response.StatusLine.StatusCode = 200;
+                    response.StatusLine.StatusText = "OK";
+                }
+                else
+                {
+                    responseBody = Encoding.UTF8.GetString(File.ReadAllBytes("not_found.html"));
+                    response.StatusLine.StatusCode = 404;
+                    response.StatusLine.StatusText = "Not Found";
+                }
+                response.Body = responseBody;
+
+
+                clientSocket.Send(Encoding.UTF8.GetBytes(response.ToString()));
 
                 clientSocket.Close();
                 clientSocket.Dispose();
@@ -64,50 +77,22 @@ public class Server
     //TODO: Rename method to better reflect what it does
     private HttpRequest ReadSocketToEnd(Socket clientSocket, int bufferSize = 1024)
     {
-        byte[] buffer = new byte[bufferSize];
-        var stringBuilder = new StringBuilder();
-        HttpRequest? request = null;
-
-        for(int receivedBytes; (receivedBytes = clientSocket.Receive(buffer)) > 0;)
-        {    
-            if (receivedBytes == 0) break;
-            byte[] bufferWithoutZeros = new byte[receivedBytes];
-            Array.Copy(buffer, bufferWithoutZeros, receivedBytes); //bufferWithoutZeros will include data without trailing zeros from buffer
-
-            string decodedBuffer = Encoding.UTF8.GetString(bufferWithoutZeros);
-            stringBuilder.Append(decodedBuffer);
-
-            int headerEndPosition = decodedBuffer.IndexOf("\r\n\r\n"); //HTTP header list always ends with 2 CRLF
-
-            if(headerEndPosition == -1) continue;
-            
-            string intermediateString = stringBuilder.ToString();
-
-            int headerLength = intermediateString.Length-receivedBytes+headerEndPosition;
-            string headerString = intermediateString[..headerLength];
-
-            //because of reading from buffer, part of request body might be read without knowing it's length
-            //this body part is separated from header part and if body exists(Content-Length header is provided and != 0) it is prepended to body that read in ProcessRequestBody part
-            string requestBodyFromBuffer = intermediateString[headerLength..];
-
-            request = HttpRequestValidator.ProcessRequest(headerString);
-
-            //TODO: Read header content-length and read request body to end
-            if (!request.Headers.TryGetValue("Content-Length", out string? value) || String.IsNullOrEmpty(value))
-                return request;
-                
-            request.Body = requestBodyFromBuffer;
-            ProcessRequestBody(clientSocket, request);
-
-        }    
-
+        var requestProcess = new HttpRequestProcessor();
+        
+        Tuple<string, string> readResults = ReadSocketUntilDelimiter(clientSocket, "\r\n\r\n", false); // contains header section in first item and request body from buffer if body exists
+        HttpRequest request = requestProcess.ProcessRequestHeaders(readResults.Item1);
         if (request == null)
             throw new Exception("Failed to Receive proper request");
+        
+        if(string.IsNullOrEmpty(readResults.Item2))
+            return request;
 
+        request.Body = readResults.Item2;
+        ReadRequestBody(clientSocket, request);
         return request;
     }
 
-    private void ProcessRequestBody(Socket clientSocket, HttpRequest request )
+    private void ReadRequestBody(Socket clientSocket, HttpRequest request )
     {
         var headers = request.Headers;
         int contentLength;
@@ -174,6 +159,5 @@ public class Server
         }  
         return new Tuple<string, string>(result, leftoverFromBuffer);
     }
-
 
 }

@@ -2,14 +2,14 @@
 
 namespace HttpServer;
 
-public static class HttpRequestValidator
+public class HttpRequestProcessor
 {
     /// <summary>
     /// Validates HTTP requests
     /// </summary>
     /// <param name="headerString"></param>
     /// <returns>HttpRequest instance if request is validated, otherwise null</returns>
-    public static HttpRequest ProcessRequest(string headerString)
+    public HttpRequest ProcessRequestHeaders(string headerString)
     {
         var request = new HttpRequest();
         string[] headers = SplitHeaderIntoStringArray(headerString);
@@ -23,7 +23,7 @@ public static class HttpRequestValidator
         return request;
     }
 
-    private static string[] SplitHeaderIntoStringArray(string headerString)
+    private string[] SplitHeaderIntoStringArray(string headerString)
     {
         string[] headers = headerString.Split("\r\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -34,7 +34,7 @@ public static class HttpRequestValidator
     }
 
     #region Verify request-line
-    private static RequestLine ProcessRequestLine(string requestLineString)
+    private RequestLine ProcessRequestLine(string requestLineString)
     {
         var requestLine = new RequestLine();
         string[] splitRequestLine = SplitRequestLineIntoArray(requestLineString);
@@ -51,7 +51,7 @@ public static class HttpRequestValidator
         return requestLine;
     }
     //TODO: Change to data object
-    private static string[] SplitRequestLineIntoArray(string requestLine)
+    private string[] SplitRequestLineIntoArray(string requestLine)
     {
         string[] splitRequestLineArray = requestLine.Split(" ");
         //HTTP 0.9 request line consists only of verb and path to resource
@@ -62,7 +62,7 @@ public static class HttpRequestValidator
         return splitRequestLineArray;
     }
 
-    private static HttpRequestVerb ParseRequestVerb(string verb)
+    private HttpRequestVerb ParseRequestVerb(string verb)
     {
         switch(verb)
         {
@@ -80,7 +80,7 @@ public static class HttpRequestValidator
     }
 
     //Currenly supports only relative paths
-    private static bool ValidateURI(string path)
+    private bool ValidateURI(string path)
     {
         if(String.IsNullOrEmpty(path)) 
             return false;
@@ -106,7 +106,7 @@ public static class HttpRequestValidator
 
     #region Verify rest of headers
 
-    private static Dictionary<string, string> ValidateHeadersSection(string[] headers)
+    private Dictionary<string, string> ValidateHeadersSection(string[] headers)
     {
         var headersDict = new Dictionary<string, string>();
         foreach(string header in headers)
@@ -117,7 +117,7 @@ public static class HttpRequestValidator
         return headersDict;
     }
 
-    private static Tuple<string, string> SplitHeaderIntoKeyValueTuple(string header)
+    private Tuple<string, string> SplitHeaderIntoKeyValueTuple(string header)
     {
         int indexOfHeaderDelimiter = header.IndexOf(':');
         if(indexOfHeaderDelimiter == -1)
@@ -129,7 +129,7 @@ public static class HttpRequestValidator
         return new Tuple<string, string>(headerKey, headerValue);
     }
 
-    private static void AddHeaderTupleToHeadersDictionary(Dictionary<string, string> headersDict, Tuple<string, string> headerTuple)
+    private void AddHeaderTupleToHeadersDictionary(Dictionary<string, string> headersDict, Tuple<string, string> headerTuple)
     {
         bool addedSuccessfully = headersDict.TryAdd(headerTuple.Item1.Trim().ToLower(), headerTuple.Item2.Trim());
         if(!addedSuccessfully) 
