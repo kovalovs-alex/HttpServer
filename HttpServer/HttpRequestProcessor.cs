@@ -44,8 +44,7 @@ public class HttpRequestProcessor
         string requestLineVersion = splitRequestLine.Length == 3 ? splitRequestLine[2] : "HTTP/0.9";
 
         requestLine.Verb = ParseRequestVerb(requestLineVerb);
-        //bool isUriValid = ValidateURI(requestLineUri);
-        requestLine.URI = ValidateURI(requestLineUri) ? requestLineUri : "Not Found";
+        requestLine.URI = ValidateURI(requestLineUri);
         requestLine.HttpVersion = ParseRequestVersion(requestLineVersion); 
 
         return requestLine;
@@ -80,13 +79,31 @@ public class HttpRequestProcessor
     }
 
     //Currenly supports only relative paths
-    private bool ValidateURI(string path)
+    private string ValidateURI(string path)
     {
         if(String.IsNullOrEmpty(path)) 
-            return false;
+            throw new ArgumentNullException($"Argument {nameof(path)} is null or empty");
+
+        string processedPath = path;
 
         var regex = new Regex("\\.?/.*"); //matches paths like ./* and /*
-        return regex.IsMatch(path);
+        if(!regex.IsMatch(processedPath))
+            throw new ArgumentException($"Provided Uri is not a valid path");
+
+        if(processedPath[0] == '.')
+            processedPath = processedPath[1..];
+
+        if(processedPath[0]== '/') 
+            processedPath = processedPath[1..];
+
+        //if path become empty after alterations - it means it was either '.' './' or '/' 
+        if(processedPath.Length == 0) 
+            processedPath = "index.html";
+            
+        if(!File.Exists(processedPath))
+            return "not_found.html";
+
+        return processedPath;
     }
     private static HttpVersion ParseRequestVersion(string version)
     {

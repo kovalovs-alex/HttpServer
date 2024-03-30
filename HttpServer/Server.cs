@@ -46,18 +46,17 @@ public class Server
                 };
 
                 string requestedResource = incomingRequest.RequestLine.URI;
-                if(File.Exists(requestedResource))
+                responseBody = Encoding.UTF8.GetString(File.ReadAllBytes(requestedResource));
+                if(requestedResource == "not_found.html") //TODO : Change from magic string
                 {
-                    responseBody = Encoding.UTF8.GetString(File.ReadAllBytes(requestedResource));
+                    response.StatusLine.StatusCode = 404;
+                    response.StatusLine.StatusText = "Not Found";
+                } else
+                {
                     response.StatusLine.StatusCode = 200;
                     response.StatusLine.StatusText = "OK";
                 }
-                else
-                {
-                    responseBody = Encoding.UTF8.GetString(File.ReadAllBytes("not_found.html"));
-                    response.StatusLine.StatusCode = 404;
-                    response.StatusLine.StatusText = "Not Found";
-                }
+
                 response.Body = responseBody;
 
 
