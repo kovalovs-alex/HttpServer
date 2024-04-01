@@ -11,7 +11,7 @@ public class HttpResponse
 
     public override string ToString()
     {
-        return $"{StatusLine}{Headers}{Body}\r\n";
+        return $"{StatusLine}{HeaderToString()}{Body}\r\n";
     }
 
     //TODO: Rename
@@ -20,7 +20,7 @@ public class HttpResponse
         var stringBuilder = new StringBuilder();
         foreach(string key in Headers.Keys)
         {
-            stringBuilder.Append($"{key}:{Headers[key]}\r\n");
+            stringBuilder.Append($"{key}: {Headers[key]}\r\n");
         }
         return stringBuilder.ToString();
     }

@@ -6,7 +6,7 @@ Currently Progress:
 
 - Basics
 - [x] Receive and Validate Request
-- [ ] Return requested resource
+- [x] Return requested resource
 - Must Haves
 - [ ] SSL
 - [ ] Multi-Threading
