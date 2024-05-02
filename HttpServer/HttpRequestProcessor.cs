@@ -100,10 +100,7 @@ public class HttpRequestProcessor
         if(processedPath.Length == 0) 
             processedPath = "index.html";
             
-        if(!File.Exists(processedPath))
-            return "not_found.html";
-
-        return processedPath;
+        return !File.Exists(processedPath) ? "not_found.html" : processedPath;
     }
     private static HttpVersion ParseRequestVersion(string version)
     {

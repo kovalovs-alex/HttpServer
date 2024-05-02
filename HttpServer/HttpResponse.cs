@@ -5,24 +5,19 @@ namespace HttpServer;
 
 public class HttpResponse
 {
-    public ResponseStatusLine StatusLine {get;set;}
-    public Dictionary<string, string> Headers;
-    public string Body { get; set;}
+    public ResponseStatusLine StatusLine {get; set;}
+    public Dictionary<string, string> Headers = new Dictionary<string, string>();
+    public HttpResponseBody? Body;
+    // public string Body { get; set;}
 
     public override string ToString()
     {
-        return $"{StatusLine}{HeaderToString()}{Body}\r\n";
-    }
-
-    //TODO: Rename
-    private string HeaderToString()
-    {
-        var stringBuilder = new StringBuilder();
-        foreach(string key in Headers.Keys)
-        {
-            stringBuilder.Append($"{key}: {Headers[key]}\r\n");
-        }
-        return stringBuilder.ToString();
+        var headerStringBuilder = new StringBuilder();
+        headerStringBuilder.Append(Headers.ConvertToHttpHeaders());
+        if(Body != null)
+            headerStringBuilder.Append(Body.ContentHeaders.ConvertToHttpHeaders());
+            
+        return $"{StatusLine}{headerStringBuilder}\r\n\r\n{Body?.Content}";
     }
 }
 

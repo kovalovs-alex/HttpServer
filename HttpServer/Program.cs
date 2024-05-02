@@ -3,5 +3,5 @@ using HttpServer;
 
 //Console.WriteLine("Hello, World!");
 
-new Server()
+new Server("127.0.0.1", 8080)
     .Start();
