@@ -8,6 +8,6 @@ Currently Progress:
 - [x] Receive and Validate Request
 - [x] Return requested resource
 - Must Haves
+- [x] Keep-Alive connections
 - [ ] SSL
 - [ ] Multi-Threading
-- [ ] Keep-Alive connections
